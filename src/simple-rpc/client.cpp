@@ -8,7 +8,8 @@
 
 namespace srpc {
     client::client()
-            : io_(), socket_(io_), work_guard_(boost::asio::make_work_guard(io_)) {
+            : io_(), socket_(io_), work_guard_(boost::asio::make_work_guard(io_))
+    {
         initialize();
     }
 

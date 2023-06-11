@@ -14,7 +14,11 @@ using boost::asio::ip::tcp;
 namespace srpc {
 
     server::server(const std::string &address, unsigned short port)
-            : io_(), acceptor_(io_, tcp::endpoint(boost::asio::ip::address::from_string(address), port)) {
+            : io_()
+            , acceptor_(io_, tcp::endpoint(boost::asio::ip::address::from_string(address), port))
+            , source_({address, port})
+            , dispatcher_(std::make_shared<dispatcher>())
+    {
         fmt::print("Starting server on address {}:{}\n", address, port);
         do_accept();
     }
@@ -41,7 +45,8 @@ namespace srpc {
                 [this](const boost::system::error_code &error, tcp::socket socket) {
                     if (!error) {
                         fmt::print("Accepted connection\n");
-                        std::make_shared<tcp_connection>(std::move(socket))->start();
+
+                        std::make_shared<tcp_connection>(std::move(socket), source_, dispatcher_)->start();
                     } else {
                         fmt::print("Error accepting connection: {}\n", error.message());
                     }
