@@ -9,7 +9,7 @@ namespace srpc {
 
 class server {
 public:
-    server(std::string const &address, unsigned short port);
+    server(unsigned short port);
     ~server();
 
     //! Starts synchronous (blocking) server loop

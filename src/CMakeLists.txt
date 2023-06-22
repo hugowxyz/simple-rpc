@@ -6,6 +6,6 @@ add_library(${CMAKE_PROJECT_NAME}
         simple-rpc/server.cpp
         simple-rpc/tcp_connection.cpp
         simple-rpc/client.cpp
-        ../include/simple-rpc/utils.h)
+        simple-rpc/rpc_node.cpp)
 
 target_link_libraries(${OUTPUT_LIBRARY_NAME})

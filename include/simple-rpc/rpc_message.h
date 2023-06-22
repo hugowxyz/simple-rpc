@@ -6,6 +6,7 @@
 #define SIMPLERPC_RPC_MESSAGE_H
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <future>
 #include "utils.h"
@@ -41,6 +42,18 @@ public:
     std::string procedure_name;
 
     std::string payload;
+
+    rpc_message() = default;
+    rpc_message(RpcStatusCode status_code_, std::string payload_)
+        : status_code(status_code_)
+        , payload(std::move(payload_)) {}
+
+    static rpc_message make_reply(rpc_message message, RpcStatusCode status_code_, std::string payload_) {
+        rpc_message reply = message;
+        reply.status_code = status_code_;
+        reply.payload = payload_;
+        return reply;
+    }
 
     json to_json() {
         return json{

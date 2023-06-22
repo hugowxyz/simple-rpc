@@ -13,13 +13,13 @@ using boost::asio::ip::tcp;
 
 namespace srpc {
 
-    server::server(const std::string &address, unsigned short port)
+    server::server(unsigned short port)
             : io_()
-            , acceptor_(io_, tcp::endpoint(boost::asio::ip::address::from_string(address), port))
-            , source_({address, port})
+            , acceptor_(io_, tcp::endpoint(boost::asio::ip::tcp::v4(), port))
+            , source_(get_local(acceptor_))
             , dispatcher_(std::make_shared<dispatcher>())
     {
-        fmt::print("Starting server on address {}:{}\n", address, port);
+        fmt::print("Starting server on address {}:{}\n", source_.addr, source_.port);
         do_accept();
     }
 

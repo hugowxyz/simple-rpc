@@ -10,7 +10,35 @@
 
 int main() {
     std::thread server_thread([]() {
-        srpc::server s{"0.0.0.0", 8000};
+        srpc::server s{8000};
+
+        s.bind("add", [](const rpc_message& message) {
+            int a, b;
+            try {
+                json payload = json::parse(message.payload);
+                a = payload["a"].get<int>();
+                b = payload["b"].get<int>();
+            } catch (const std::exception& e) {
+                std::cout << e.what() << std::endl;
+                rpc_message reply;
+                reply.status_code = RpcStatusCode::InvalidRequest;
+                reply.payload = "Invalid JSON provided";
+
+                return reply;
+            }
+
+            auto result = a + b;
+            rpc_message reply = message;
+            reply.status_code = RpcStatusCode::Success;
+            reply.payload = std::to_string(result);
+            return reply;
+        });
+
+        s.run();
+    });
+
+    std::thread server_thread1([]() {
+        srpc::server s{8001};
 
         s.bind("add", [](const rpc_message& message) {
             int a, b;
@@ -44,7 +72,8 @@ int main() {
     std::thread client_thread([&message]() {
         srpc::client c;
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        c.connect({"0.0.0.0", 8000});
+        conn_info ci = {"0.0.0.0", 8000};
+        conn_info ci1 = {"0.0.0.0", 8001};
 
         std::vector<std::future<rpc_message>> futs;
 
@@ -65,7 +94,18 @@ int main() {
             };
             message.payload = args.dump();
 
-            std::future<rpc_message> fut = c.send(message);
+            std::future<rpc_message> fut = c.send(ci, message);
+            futs.push_back(std::move(fut));
+        }
+
+        for (int i=0; i<10; i++) {
+            json args = {
+                    {"a", dist(gen)},
+                    {"b", dist(gen)}
+            };
+            message.payload = args.dump();
+
+            std::future<rpc_message> fut = c.send(ci1, message);
             futs.push_back(std::move(fut));
         }
 
@@ -75,5 +115,6 @@ int main() {
     });
 
     server_thread.join();
+    server_thread1.join();
     client_thread.join();
 }
