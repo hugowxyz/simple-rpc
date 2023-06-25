@@ -20,6 +20,10 @@ namespace srpc {
         return invalid_request_msg;
     }
 
+    void send_message(rpc_message& message) {
+
+    }
+
     void tcp_connection::do_read() {
         auto self(shared_from_this());
         socket_.async_read_some(
@@ -65,7 +69,6 @@ namespace srpc {
                         }
 
                         if (v.size() == 0) {
-//                            std::cout << "Didn't detect any JSON" << std::endl;
                             rpc_message invalid_message = construct_invalid_message();
                             invalid_message.source = source_;
                             invalid_message.destination = dst;

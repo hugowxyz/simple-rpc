@@ -37,7 +37,6 @@ namespace srpc {
 
     class pending_info {
     public:
-
         void insert(message_store message) {
             pending_messages_.insert({message.id_, message});
             if (open_connections_.count(message.remote_) == 0) {
@@ -107,13 +106,6 @@ namespace srpc {
             return future;
         }
 
-//        void connect(conn_info cinfo) {
-//            connection_info_ = std::move(cinfo);
-//            do_connect();
-//        }
-//
-//        conn_info &current_connection() { return connection_info_; }
-
     private:
         std::shared_ptr<tcp::socket> do_connect(const conn_info& remote) {
             std::cout << "Establishing new socket connection with " << remote.addr << " " << remote.port << std::endl;
@@ -168,9 +160,6 @@ namespace srpc {
         boost::asio::io_context io_;
         std::unordered_map<conn_info, std::shared_ptr<tcp::socket>> sockets_;
         tcp::socket socket_;
-//        conn_info connection_info_;
-//
-//        std::atomic<bool> connected_;
 
         boost::asio::executor_work_guard<boost::asio::io_context::executor_type> work_guard_;
         std::thread event_loop_thread_;

@@ -49,9 +49,9 @@ public:
         , payload(std::move(payload_)) {}
 
     static rpc_message make_reply(rpc_message message, RpcStatusCode status_code_, std::string payload_) {
-        rpc_message reply = message;
+        rpc_message reply = std::move(message);
         reply.status_code = status_code_;
-        reply.payload = payload_;
+        reply.payload = std::move(payload_);
         return reply;
     }
 

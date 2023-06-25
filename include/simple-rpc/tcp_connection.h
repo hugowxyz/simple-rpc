@@ -28,6 +28,7 @@ namespace srpc {
 
     private:
         void do_read();
+        void send_message(rpc_message message);
 
     private:
         conn_info source_;
