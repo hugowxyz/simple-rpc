@@ -74,6 +74,7 @@ public:
     }
 
     static rpc_message from_json(json &j) {
+//        std::cout << j << std::endl;
         rpc_message m;
         m.message_id = j["message_id"];
         m.source = {

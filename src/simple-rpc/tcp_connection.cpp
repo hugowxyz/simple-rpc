@@ -27,13 +27,29 @@ namespace srpc {
     void tcp_connection::do_read() {
         auto self(shared_from_this());
         socket_.async_read_some(
-                boost::asio::buffer(buffer_, BUFFER_SIZE),
+                boost::asio::buffer(temp_buffer_, BUFFER_SIZE),
                 [this, self](const boost::system::error_code &error, size_t bytes) {
                     if (!error) {
-                        std::string data(buffer_, bytes);
-                        auto v = separate_json(data);
+                        boost::system::error_code ec;
+                        auto remote_info = socket_.remote_endpoint(ec);
 
-                        auto remote_info = socket_.remote_endpoint();
+                        if (ec) {
+                            std::cerr << "[Error] Failed to fetch remote_endpoint: " << ec.message() << std::endl;
+                            std::cerr << "Socket is_open " << socket_.is_open() << std::endl;
+                            return;
+                        }
+
+                        buffer_.reserve(buffer_.size() + bytes);
+                        buffer_.insert(buffer_.end(), temp_buffer_, temp_buffer_ + bytes);
+
+                        int idx = -1;
+                        std::string data(buffer_.begin(), buffer_.end());
+                        auto v = separate_json(data, idx);
+
+                        if (idx > 0) {
+                            buffer_.erase(buffer_.begin(), buffer_.begin() + idx + 1);
+                        }
+
                         conn_info dst = {
                                 remote_info.address().to_string(),
                                 static_cast<uint16_t>(remote_info.port())
@@ -45,6 +61,7 @@ namespace srpc {
                                 message = rpc_message::from_json(json_message);
                             } catch (const std::exception& e) {
                                 rpc_message invalid_message;
+                                invalid_message.message_id = message.message_id;
                                 invalid_message.source = source_;
                                 invalid_message.destination = dst;
                                 invalid_message.status_code = RpcStatusCode::InvalidRequest;
@@ -65,7 +82,6 @@ namespace srpc {
                             socket_.async_write_some(
                                     boost::asio::buffer(response.to_json().dump()),
                                     [](boost::system::error_code ec, std::size_t sz) {});
-
                         }
 
                         if (v.size() == 0) {
@@ -80,7 +96,7 @@ namespace srpc {
                                     [](boost::system::error_code ec, std::size_t sz) {});
                         }
 
-                        memset(buffer_, 0, BUFFER_SIZE);
+                        memset(temp_buffer_, 0, BUFFER_SIZE);
                         do_read();
                     } else {
                         if (error == boost::asio::error::eof) {

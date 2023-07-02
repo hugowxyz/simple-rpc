@@ -30,9 +30,9 @@ sock.connect((host, port))
 counter = 0
 
 start_time = time.time()
-end_time = start_time + 10
+end_time = start_time + 1
 
-while time.time() < end_time:
+for i in range(1000):
     data["payload"] = str(counter)
     counter += 1
     message = json.dumps(data)
@@ -40,6 +40,8 @@ while time.time() < end_time:
     response = sock.recv(1)
     # d = json.loads(response.decode())
 
+for i in range(1000):
+    sock.recv(1)
 print(counter)
 
 

@@ -35,7 +35,9 @@ namespace srpc {
         tcp::socket socket_;
 
         static constexpr uint32_t BUFFER_SIZE = 4096;
-        char buffer_[BUFFER_SIZE]{};
+        std::vector<char> buffer_;
+//        char buffer_[BUFFER_SIZE]{};
+        char temp_buffer_[BUFFER_SIZE]{};
         std::shared_ptr<dispatcher> dispatcher_;
     };
 

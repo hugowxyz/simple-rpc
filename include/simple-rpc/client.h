@@ -33,6 +33,7 @@ namespace srpc {
         std::string id_;
         pending_promise promise_;
         conn_info remote_;
+        bool fulfilled_;
     };
 
     class pending_info {
@@ -63,10 +64,28 @@ namespace srpc {
 
         pending_promise get_promise(const std::string& message_id) {
             if (pending_messages_.count(message_id) <= 0) {
-                throw std::runtime_error("message id doesn't exist in pending_messages");
+//                throw std::runtime_error("message id doesn't exist in pending_messages");
+                    return nullptr;
             }
 
             return pending_messages_[message_id].promise_;
+        }
+
+        void set_promise_fulfilled(const std::string& message_id, bool value) {
+            if (pending_messages_.count(message_id) <= 0) {
+                return;
+            }
+
+            pending_messages_[message_id].fulfilled_ = value;
+        }
+
+        bool is_promise_fulfilled(const std::string& message_id) {
+            if (pending_messages_.count(message_id) <= 0) {
+//                throw std::runtime_error("message id not in pending messages");
+                return false;
+            }
+
+            return pending_messages_[message_id].fulfilled_;
         }
 
     private:
@@ -125,13 +144,24 @@ namespace srpc {
                     boost::asio::buffer(buffer_, BUFFER_SIZE),
                     [this, socket](boost::system::error_code error, size_t bytes) {
                         if (!error) {
-                            std::string data(buffer_, bytes);
+                            another_buffer_.reserve(another_buffer_.size() + bytes);
+                            another_buffer_.insert(another_buffer_.end(), buffer_, buffer_ + bytes);
+
+                            int idx = -1;
+                            std::string data(another_buffer_.begin(), another_buffer_.end());
                             auto v = separate_json(data);
 
+                            if (idx > 0) {
+                                another_buffer_.erase(another_buffer_.begin(), another_buffer_.begin() + idx + 1);
+                            }
+
                             for (auto &json_message : v) {
+//                                std::cout << json_message << std::endl;
                                 rpc_message message = rpc_message::from_json(json_message);
-                                if (pending_data_.get_promise(message.message_id) != nullptr) {
-                                    pending_data_.get_promise(message.message_id)->set_value(message);
+                                auto res = pending_data_.get_promise(message.message_id);
+                                if (res != nullptr && !pending_data_.is_promise_fulfilled(message.message_id)) {
+                                    res->set_value(message);
+                                    pending_data_.set_promise_fulfilled(message.message_id, true);
                                 }
                             }
 
@@ -166,6 +196,8 @@ namespace srpc {
 
         static const uint32_t BUFFER_SIZE = 4096;
         char buffer_[BUFFER_SIZE]{};
+
+        std::vector<char> another_buffer_;
 
         abstract_id_generator *id_generator_ = new uuid_generator();
         pending_info pending_data_;
